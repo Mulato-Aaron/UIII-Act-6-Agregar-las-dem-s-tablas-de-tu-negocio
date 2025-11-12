@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Confirmar Eliminación de Curso</h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text">¿Estás seguro de que deseas **eliminar permanentemente** el siguiente curso?</p>
+                
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">**ID:** {{ curso.id }}</li>
+                    <li class="list-group-item">**Nombre del Curso:** {{ curso.nombre_curso }} ({{ curso.codigo }})</li>
+                    <li class="list-group-item">**Profesor:** {{ curso.profesor.nombre_profesor }} {{ curso.profesor.apellido_profesor }}</li>
+                </ul>
+                
+                <form method="POST" action="{% url 'borrar_curso' curso.id %}">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill"></i> Confirmar Borrar</button>
+                        <a href="{% url 'ver_curso' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

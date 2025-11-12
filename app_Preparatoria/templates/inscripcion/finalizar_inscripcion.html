@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Confirmar Finalización de Inscripción</h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text">¿Estás seguro de que deseas **finalizar** la siguiente inscripción? Se establecerá la fecha de finalización a hoy y se marcará como inactiva.</p>
+                
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">**Estudiante:** {{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }} ({{ inscripcion.estudiante.matricula }})</li>
+                    <li class="list-group-item">**Curso:** {{ inscripcion.curso.nombre_curso }} ({{ inscripcion.curso.codigo }})</li>
+                    <li class="list-group-item">**Fecha de Inicio:** {{ inscripcion.fecha_inscripcion_curso|date:"d/m/Y" }}</li>
+                </ul>
+                
+                <form method="POST" action="{% url 'finalizar_inscripcion' inscripcion.id %}">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-check-circle-fill"></i> Confirmar Finalización</button>
+                        <a href="{% url 'ver_inscripciones' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

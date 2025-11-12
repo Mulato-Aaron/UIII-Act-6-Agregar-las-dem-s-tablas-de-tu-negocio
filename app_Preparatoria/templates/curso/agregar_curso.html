@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="bi bi-book-half"></i> Agregar Nuevo Curso</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'agregar_curso' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nombre_curso" class="form-label">Nombre del Curso</label>
+                            <input type="text" class="form-control" id="nombre_curso" name="nombre_curso" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="codigo" class="form-label">Código</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="creditos" class="form-label">Créditos</label>
+                            <input type="number" class="form-control" id="creditos" name="creditos" required min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="profesor" class="form-label">Profesor Asignado</label>
+                            <select class="form-select" id="profesor" name="profesor" required>
+                                <option value="" selected disabled>Seleccione un profesor</option>
+                                {% for profesor in profesores %}
+                                    <option value="{{ profesor.id }}">{{ profesor.nombre_profesor }} {{ profesor.apellido_profesor }} ({{ profesor.especialidad }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="horario" class="form-label">Horario</label>
+                            <input type="text" class="form-control" id="horario" name="horario">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="aula" class="form-label">Aula</label>
+                            <input type="text" class="form-control" id="aula" name="aula">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3" maxlength="100"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-save-fill"></i> Guardar Curso</button>
+                        <a href="{% url 'ver_curso' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

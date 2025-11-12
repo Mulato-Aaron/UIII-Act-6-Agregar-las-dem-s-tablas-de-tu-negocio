@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="bi bi-person-plus-fill"></i> Agregar Nuevo Estudiante</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'agregar_estudiante' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nombre_estudiante" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre_estudiante" name="nombre_estudiante" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellido_estudiante" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido_estudiante" name="apellido_estudiante" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="matricula" class="form-label">Matrícula</label>
+                            <input type="text" class="form-control" id="matricula" name="matricula" required maxlength="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="correo_estudiante" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="correo_estudiante" name="correo_estudiante" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cursos" class="form-label">Cursos a Inscribir</label>
+                        <select multiple class="form-select" id="cursos" name="cursos">
+                            {% for curso in cursos %}
+                                <option value="{{ curso.id }}">{{ curso.nombre_curso }} ({{ curso.codigo }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Mantén Ctrl (o Cmd) para seleccionar múltiples cursos.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-info text-white"><i class="bi bi-save-fill"></i> Guardar Estudiante</button>
+                        <a href="{% url 'ver_estudiante' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

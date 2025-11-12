@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0"><i class="bi bi-pencil-square"></i> Actualizar Profesor: {{ profesor.nombre_profesor }} {{ profesor.apellido_profesor }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'realizar_actualizacion_profesor' profesor.id %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nombre_profesor" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre_profesor" name="nombre_profesor" value="{{ profesor.nombre_profesor }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellido_profesor" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido_profesor" name="apellido_profesor" value="{{ profesor.apellido_profesor }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="correo_profesor" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="correo_profesor" name="correo_profesor" value="{{ profesor.correo_profesor }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono" value="{{ profesor.telefono }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="especialidad" class="form-label">Especialidad</label>
+                        <input type="text" class="form-control" id="especialidad" name="especialidad" value="{{ profesor.especialidad }}">
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="activo" name="activo" {% if profesor.activo %}checked{% endif %}>
+                        <label class="form-check-label" for="activo">Profesor Activo</label>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-arrow-repeat"></i> Actualizar</button>
+                        <a href="{% url 'ver_profesor' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

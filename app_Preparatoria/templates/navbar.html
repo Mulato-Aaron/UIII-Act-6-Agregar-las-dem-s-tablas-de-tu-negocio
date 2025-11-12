@@ -1,0 +1,66 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary mb-4" style="--bs-bg-opacity: .9;">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'inicio_sistema' %}">
+            <i class="bi bi-gear-fill"></i> Sistema de Administración Preparatoria
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inicio_sistema' %}"><i class="bi bi-house-door-fill"></i> Inicio</a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="profesorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-video2"></i> Profesor
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="profesorDropdown">
+                        <li><a class="dropdown-item" href="{% url 'agregar_profesor' %}">Agregar Profesor</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ver_profesor' %}">Ver Profesores</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="cursoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-book-fill"></i> Curso
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="cursoDropdown">
+                        <li><a class="dropdown-item" href="{% url 'agregar_curso' %}">Agregar Curso</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ver_curso' %}">Ver Curso</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="estudianteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-badge-fill"></i> Estudiante
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="estudianteDropdown">
+                        <li><a class="dropdown-item" href="{% url 'agregar_estudiante' %}">Agregar Estudiante</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ver_estudiante' %}">Ver Estudiante</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="inscripcionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-card-checklist"></i> Inscripciones
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="inscripcionDropdown">
+                        <li><a class="dropdown-item" href="{% url 'agregar_inscripcion' %}">Crear Inscripción</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ver_inscripciones' %}">Ver Inscripciones Activas</a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="calificacionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-list-stars"></i> Calificaciones
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="calificacionDropdown">
+                        <li><a class="dropdown-item" href="{% url 'seleccionar_curso_calificar' %}">Gestionar Calificaciones</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

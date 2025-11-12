@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="bi bi-plus-circle-fill"></i> Inscribir Estudiante en Curso(s)</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'agregar_inscripcion' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="estudiante_id" class="form-label">Seleccionar Estudiante</label>
+                        <select class="form-select" id="estudiante_id" name="estudiante_id" required>
+                            <option value="" disabled selected>--- Seleccione un Estudiante ---</option>
+                            {% for estudiante in estudiantes %}
+                                <option value="{{ estudiante.id }}">{{ estudiante.matricula }} - {{ estudiante.nombre_estudiante }} {{ estudiante.apellido_estudiante }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cursos" class="form-label">Cursos a Inscribir</label>
+                        <select multiple class="form-select" id="cursos" name="cursos" required>
+                            {% for curso in cursos %}
+                                <option value="{{ curso.id }}">{{ curso.nombre_curso }} ({{ curso.codigo }}) - Prof: {{ curso.profesor }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Mantén Ctrl (o Cmd) para seleccionar múltiples cursos.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-info text-white"><i class="bi bi-check-circle-fill"></i> Confirmar Inscripción</button>
+                        <a href="{% url 'ver_inscripciones' %}" class="btn btn-secondary"><i class="bi bi-x-circle-fill"></i> Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

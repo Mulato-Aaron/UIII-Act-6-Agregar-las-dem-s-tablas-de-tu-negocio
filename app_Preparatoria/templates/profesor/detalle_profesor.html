@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i> Detalles del Profesor</h3>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ profesor.nombre_profesor }} {{ profesor.apellido_profesor }}</h4>
+                <hr>
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ profesor.id }}</dd>
+                    
+                    <dt class="col-sm-4">Correo:</dt>
+                    <dd class="col-sm-8">{{ profesor.correo_profesor }}</dd>
+
+                    <dt class="col-sm-4">Teléfono:</dt>
+                    <dd class="col-sm-8">{{ profesor.telefono }}</dd>
+
+                    <dt class="col-sm-4">Especialidad:</dt>
+                    <dd class="col-sm-8">{{ profesor.especialidad }}</dd>
+
+                    <dt class="col-sm-4">Fecha Contratación:</dt>
+                    <dd class="col-sm-8">{{ profesor.fecha_contratacion|date:"d/m/Y" }}</dd>
+
+                    <dt class="col-sm-4">Estado:</dt>
+                    <dd class="col-sm-8">
+                        {% if profesor.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+            <div class="card-footer text-end">
+                <a href="{% url 'ver_profesor' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle-fill me-1"></i> Volver al Listado</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

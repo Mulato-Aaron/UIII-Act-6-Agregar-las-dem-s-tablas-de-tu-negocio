@@ -25,10 +25,23 @@
                         <label for="cursos" class="form-label">Cursos a Inscribir</label>
                         <select multiple class="form-select" id="cursos" name="cursos" required>
                             {% for curso in cursos %}
-                                <option value="{{ curso.id }}">{{ curso.nombre_curso }} ({{ curso.codigo }}) - Prof: {{ curso.profesor }}</option>
+                                <option value="{{ curso.id }}">{{ curso.nombre_curso }} ({{ curso.codigo }}) - Prof: {{ curso.profesor.nombre_profesor }}</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">Mantén Ctrl (o Cmd) para seleccionar múltiples cursos.</div>
+                    </div>
+
+                    {# CORRECCIÓN: AGREGAR CAMPO PERIODO ACADÉMICO #}
+                    <div class="mb-3">
+                        <label for="periodo_academico" class="form-label">Periodo Académico</label>
+                        <input type="text" class="form-control" id="periodo_academico" name="periodo_academico" value="2025-2" placeholder="Ej: 2025-2" required>
+                        <div class="form-text">Define el periodo para evitar duplicados en el mismo semestre.</div>
+                    </div>
+                    
+                    {# CORRECCIÓN: AGREGAR CAMPO ES OBLIGATORIO #}
+                    <div class="mb-4 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="es_obligatorio" name="es_obligatorio" checked>
+                        <label class="form-check-label" for="es_obligatorio">Curso Obligatorio (Obligatorio/Opcional)</label>
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">

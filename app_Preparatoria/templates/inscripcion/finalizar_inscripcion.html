@@ -13,6 +13,8 @@
                 <ul class="list-group mb-4">
                     <li class="list-group-item">**Estudiante:** {{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }} ({{ inscripcion.estudiante.matricula }})</li>
                     <li class="list-group-item">**Curso:** {{ inscripcion.curso.nombre_curso }} ({{ inscripcion.curso.codigo }})</li>
+                    <li class="list-group-item">**Periodo:** {{ inscripcion.periodo_academico }}</li>
+                    <li class="list-group-item">**Tipo:** {% if inscripcion.es_obligatorio %}Obligatorio{% else %}Opcional{% endif %}</li>
                     <li class="list-group-item">**Fecha de Inicio:** {{ inscripcion.fecha_inscripcion_curso|date:"d/m/Y" }}</li>
                 </ul>
                 

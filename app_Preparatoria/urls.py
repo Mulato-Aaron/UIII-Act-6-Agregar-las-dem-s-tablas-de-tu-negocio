@@ -42,4 +42,9 @@ urlpatterns = [
     path('calificacion/', views.ver_calificaciones_curso, name='seleccionar_curso_calificar'),
     path('calificacion/gestionar/<int:curso_id>/', views.ver_calificaciones_por_curso, name='ver_calificaciones_por_curso'),
     path('calificacion/agregar/<int:inscripcion_id>/', views.agregar_calificacion, name='agregar_calificacion'),
+
+    # Rutas para el modelo ASISTENCIA (NUEVAS)
+    path('asistencia/', views.seleccionar_curso_asistencia, name='seleccionar_curso_asistencia'),
+    path('asistencia/gestionar/<int:curso_id>/', views.gestionar_asistencia, name='gestionar_asistencia'),
+    path('asistencia/historial/<int:inscripcion_id>/', views.ver_historial_asistencia_estudiante, name='ver_historial_asistencia_estudiante'),
 ]

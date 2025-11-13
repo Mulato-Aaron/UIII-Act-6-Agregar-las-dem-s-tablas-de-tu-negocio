@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4 text-warning">
+    <i class="bi bi-clock-history"></i> Historial de Asistencia
+</h2>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="m-0">
+            <i class="bi bi-person-fill"></i> Estudiante: {{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }} ({{ inscripcion.estudiante.matricula }})
+        </h5>
+    </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+            <strong>Curso:</strong> {{ inscripcion.curso.nombre_curso }} ({{ inscripcion.curso.codigo }})
+        </li>
+        <li class="list-group-item">
+            <strong>Periodo Académico:</strong> {{ inscripcion.periodo_academico }}
+        </li>
+    </ul>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-info text-center">
+            <tr>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Tipo Sesión</th>
+                <th>Hora Reg.</th>
+                <th>Observaciones</th>
+                <th>Justificación Aprobada</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in historial %}
+            <tr class="{% if not registro.presente %}table-danger{% else %}table-success{% endif %}">
+                <td>{{ registro.fecha|date:"d/m/Y" }}</td>
+                <td class="text-center">
+                    {% if registro.presente %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Presente</span>
+                    {% else %}
+                        <span class="badge bg-danger"><i class="bi bi-x-octagon-fill"></i> Ausente</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ registro.get_tipo_sesion_display }}</td>
+                <td>{{ registro.hora_registro|time:"H:i" }}</td>
+                <td>{{ registro.observaciones|default:"-" }}</td>
+                <td class="text-center">
+                    {% if registro.justificacion_aprobada %}
+                        <i class="bi bi-check-lg text-success"></i> Sí
+                    {% else %}
+                        <i class="bi bi-x-lg text-danger"></i> No
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No hay registros de asistencia para esta inscripción.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'gestionar_asistencia' inscripcion.curso.id %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left-circle-fill"></i> Volver a la Gestión del Curso
+    </a>
+</div>
+
+{% endblock %}

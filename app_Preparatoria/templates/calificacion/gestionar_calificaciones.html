@@ -1,16 +1,40 @@
 {% extends 'base.html' %}
+{% load custom_filters %} {# Necesario para los filtros 'add' y 'div' usados en el promedio #}
 
 {% block content %}
 <h2 class="mb-4 text-primary"><i class="bi bi-list-stars"></i> Calificaciones para: {{ curso.nombre_curso }} ({{ curso.codigo }})</h2>
-<p class="text-muted">**Profesor:** {{ curso.profesor.nombre_profesor }} {{ curso.profesor.apellido_profesor }}</p>
+<p class="text-muted"><strong>Profesor:</strong> {{ curso.profesor.nombre_profesor }} {{ curso.profesor.apellido_profesor }}</p>
+
+<hr>
 
 <div class="row">
     {% for inscripcion in inscripciones %}
-    <div class="col-md-6 mb-4">
+    <div class="col-lg-6 col-md-12 mb-4">
         <div class="card shadow-sm h-100">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }} <small class="text-muted">({{ inscripcion.estudiante.matricula }})</small></h5>
+                
+                {# CÁLCULO DEL PROMEDIO (requiere custom_filters.py) #}
+                {% with calificaciones=inscripcion.calificaciones.all %}
+                    {% with total_puntaje=0 %}
+                        {% for calificacion in calificaciones %}
+                            {# Suma el puntaje de todas las calificaciones #}
+                            {% with total_puntaje=total_puntaje|add:calificacion.puntaje %}
+                            {% endwith %}
+                        {% endfor %}
+                        
+                        {# Si hay calificaciones, calcula el promedio simple (Suma de Notas / Cantidad de Notas) #}
+                        {% if calificaciones|length > 0 %}
+                            {% with promedio_simple=total_puntaje|div:calificaciones|length %}
+                                <span class="badge bg-primary fs-6" title="Promedio simple registrado">
+                                    Promedio: {{ promedio_simple|floatformat:2 }}
+                                </span>
+                            {% endwith %}
+                        {% endif %}
+                    {% endwith %}
+                {% endwith %}
             </div>
+            
             <div class="card-body">
                 
                 <h6><i class="bi bi-journal-check me-1"></i> Evaluaciones Registradas:</h6>
@@ -18,23 +42,31 @@
                 <ul class="list-group list-group-flush mb-3 border-bottom pb-3">
                     {% for calificacion in inscripcion.calificaciones.all %}
                         <li class="list-group-item d-flex justify-content-between align-items-center py-1 px-0">
-                            {{ calificacion.get_tipo_evaluacion_display }}
+                            <div>
+                                **{{ calificacion.get_tipo_evaluacion_display }}** ({{ calificacion.fecha_evaluacion|date:"d/m/Y" }})
+                                <small class="text-secondary ms-2">Peso: {{ calificacion.porcentaje_peso }}%</small>
+                                {% if calificacion.profesor_asignador %}
+                                    <small class="text-info ms-2" title="Profesor Asignador">
+                                        / {{ calificacion.profesor_asignador.nombre_profesor|slice:":1" }}. {{ calificacion.profesor_asignador.apellido_profesor }}
+                                    </small>
+                                {% endif %}
+                            </div>
                             <span class="badge bg-success fs-6">{{ calificacion.puntaje }}</span>
                         </li>
                     {% endfor %}
                 </ul>
                 {% else %}
                 <div class="alert alert-secondary py-2" role="alert">
-                    No hay calificaciones.
+                    No hay calificaciones registradas aún.
                 </div>
                 {% endif %}
 
-                <form method="POST" action="{% url 'agregar_calificacion' inscripcion.id %}" class="mt-3">
+                <form method="POST" action="{% url 'agregar_calificacion' inscripcion.id %}" class="mt-3 border p-3 rounded bg-light">
                     {% csrf_token %}
                     <h6 class="text-primary mb-3"><i class="bi bi-plus-circle-fill me-1"></i> Añadir Nueva Calificación:</h6>
                     
                     <div class="row g-2 mb-3">
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                             <label for="tipo_evaluacion_{{ inscripcion.id }}" class="form-label visually-hidden">Tipo</label>
                             <select class="form-select" id="tipo_evaluacion_{{ inscripcion.id }}" name="tipo_evaluacion" required>
                                 <option value="" disabled selected>--- Tipo de Evaluación ---</option>
@@ -43,7 +75,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <label for="puntaje_{{ inscripcion.id }}" class="form-label visually-hidden">Puntaje</label>
                             <input type="number" step="0.01" min="0" max="100" class="form-control" id="puntaje_{{ inscripcion.id }}" name="puntaje" placeholder="Puntaje" required>
                         </div>
@@ -69,6 +101,6 @@
 </div>
 
 <div class="mt-4">
-    <a href="{% url 'seleccionar_curso_calificar' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle-fill me-1"></i> Volver a la Selección de Cursos</a>
+    <a href="{% url 'ver_calificaciones_curso' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle-fill me-1"></i> Volver a la Selección de Cursos</a>
 </div>
 {% endblock %}

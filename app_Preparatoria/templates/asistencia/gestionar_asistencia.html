@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load custom_filters %} 
+
+{% block content %}
+<h2 class="mb-4 text-warning"><i class="bi bi-calendar-check-fill"></i> Asistencia para: {{ curso.nombre_curso }}</h2>
+<h4 class="mb-3 text-muted">Fecha: {{ fecha_hoy|date:"d/m/Y" }}</h4>
+
+<form method="POST" action="{% url 'gestionar_asistencia' curso.id %}">
+    {% csrf_token %}
+    
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle-fill"></i> La asistencia se registrará para la fecha **{{ fecha_hoy|date:"d/m/Y" }}**. Marque las ausencias (por defecto, la casilla indica **Presente**).
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped shadow-sm">
+            <thead class="bg-dark text-white text-center">
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Matrícula</th>
+                    <th>Presente</th>
+                    <th>Observaciones (Ausencia)</th>
+                    <th>Historial</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inscripcion in inscripciones %}
+                {% with asistencia=asistencias_hoy|get_item:inscripcion.id %}
+                <tr class="{% if asistencia and not asistencia.presente %}table-danger{% endif %}">
+                    <td>{{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }}</td>
+                    <td>{{ inscripcion.estudiante.matricula }}</td>
+                    <td class="text-center">
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" id="presente_{{ inscripcion.id }}" name="presente_{{ inscripcion.id }}" 
+                                {% if asistencia and asistencia.presente %}checked{% elif not asistencia %}checked{% endif %}>
+                            <label class="form-check-label visually-hidden" for="presente_{{ inscripcion.id }}">Presente</label>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="observaciones_{{ inscripcion.id }}" 
+                                placeholder="Motivo de la ausencia o nota..." 
+                                value="{% if asistencia %}{{ asistencia.observaciones }}{% endif %}">
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'ver_historial_asistencia_estudiante' inscripcion.id %}" class="btn btn-sm btn-info text-white" title="Ver Historial">
+                            <i class="bi bi-clock-history"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No hay estudiantes activos inscritos en este curso.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="submit" class="btn btn-warning text-dark"><i class="bi bi-save-fill"></i> Guardar Asistencia del Día</button>
+        <a href="{% url 'seleccionar_curso_asistencia' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle-fill"></i> Volver</a>
+    </div>
+</form>
+
+{% endblock %}

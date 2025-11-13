@@ -11,6 +11,8 @@
                 <th>Estudiante</th>
                 <th>Curso</th>
                 <th>Código Curso</th>
+                <th>Periodo</th>
+                <th>Tipo</th>
                 <th>Fecha Inscripción</th>
                 <th>Acciones</th>
             </tr>
@@ -22,15 +24,25 @@
                 <td><a href="{% url 'ver_detalle_estudiante' inscripcion.estudiante.id %}">{{ inscripcion.estudiante.matricula }} - {{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }}</a></td>
                 <td><a href="{% url 'ver_detalle_curso' inscripcion.curso.id %}">{{ inscripcion.curso.nombre_curso }}</a></td>
                 <td>{{ inscripcion.curso.codigo }}</td>
+                {# NUEVOS CAMPOS AÑADIDOS #}
+                <td>{{ inscripcion.periodo_academico }}</td>
+                <td>
+                    {% if inscripcion.es_obligatorio %}
+                        <span class="badge bg-info">Obligatorio</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Opcional</span>
+                    {% endif %}
+                </td>
+                {# FIN NUEVOS CAMPOS #}
                 <td>{{ inscripcion.fecha_inscripcion_curso|date:"d/m/Y" }}</td>
                 <td>
-                    <a href="{% url 'ver_calificaciones_por_curso' inscripcion.curso.id %}" class="btn btn-sm btn-primary me-1"><i class="bi bi-star-fill"></i> Calificar Curso</a>
-                    <a href="{% url 'finalizar_inscripcion' inscripcion.id %}" class="btn btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Finalizar</a>
+                    <a href="{% url 'ver_calificaciones_por_curso' inscripcion.curso.id %}" class="btn btn-sm btn-primary me-1" title="Calificar Curso"><i class="bi bi-star-fill"></i></a>
+                    <a href="{% url 'finalizar_inscripcion' inscripcion.id %}" class="btn btn-sm btn-danger" title="Finalizar Inscripción"><i class="bi bi-x-circle-fill"></i></a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="text-center">No hay inscripciones activas.</td>
+                <td colspan="8" class="text-center">No hay inscripciones activas.</td>
             </tr>
             {% endfor %}
         </tbody>

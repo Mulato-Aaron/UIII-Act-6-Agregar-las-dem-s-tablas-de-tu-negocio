@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Profesor, Curso, Estudiante, Inscripcion, Calificacion
+from .models import Profesor, Curso, Estudiante, Inscripcion, Calificacion, Asistencia
 from django.urls import reverse
 from datetime import date
 
@@ -257,7 +257,7 @@ def borrar_estudiante(request, estudiante_id):
 # app_Preparatoria/views.py (Fragmento - Añadir a las funciones existentes)
 
 # ==========================================
-# INSCRIPCION MANAGEMENT FUNCTIONS
+# INSCRIPCION MANAGEMENT FUNCTIONS (CORREGIDAS)
 # ==========================================
 
 def ver_inscripciones(request):
@@ -277,12 +277,21 @@ def agregar_inscripcion(request):
         
         estudiante = get_object_or_404(Estudiante, pk=estudiante_id)
         
+        # Asumimos el periodo por defecto del modelo si no se pasa por POST
+        periodo_default = '2025-2'
+        
         for curso_id in cursos_seleccionados:
             curso = get_object_or_404(Curso, pk=curso_id)
-            # Creamos la inscripción. Si ya existe, no hace nada (por unique_together)
+            
+            # CORRECCIÓN: Usar get_or_create con el periodo para respetar la nueva clave única
             Inscripcion.objects.get_or_create(
                 estudiante=estudiante,
-                curso=curso
+                curso=curso,
+                periodo_academico=periodo_default, # Usar el campo clave
+                defaults={
+                    # Asignamos el campo booleano, si se llegara a crear
+                    'es_obligatorio': True 
+                }
             )
         
         return redirect('ver_inscripciones')
@@ -295,7 +304,6 @@ def finalizar_inscripcion(request, inscripcion_id):
     inscripcion = get_object_or_404(Inscripcion, pk=inscripcion_id)
     
     if request.method == 'POST':
-        # Marcar como inactivo y establecer fecha de finalización
         inscripcion.esta_activo = False
         inscripcion.fecha_finalizacion = date.today()
         inscripcion.save()
@@ -305,7 +313,7 @@ def finalizar_inscripcion(request, inscripcion_id):
     return render(request, 'inscripcion/finalizar_inscripcion.html', context)
 
 # ==========================================
-# CALIFICACION MANAGEMENT FUNCTIONS
+# CALIFICACION MANAGEMENT FUNCTIONS (CORREGIDAS)
 # ==========================================
 
 def ver_calificaciones_curso(request):
@@ -317,13 +325,11 @@ def ver_calificaciones_curso(request):
 def ver_calificaciones_por_curso(request, curso_id):
     """Muestra las inscripciones activas de un curso para asignar/ver calificaciones."""
     curso = get_object_or_404(Curso, pk=curso_id)
-    # Obtenemos las inscripciones activas con sus calificaciones prefetch
     inscripciones = Inscripcion.objects.filter(
         curso=curso, 
         esta_activo=True
     ).select_related('estudiante').prefetch_related('calificaciones')
     
-    # Obtenemos las opciones de tipo_evaluacion del modelo Calificacion para el template
     opciones_tipo = Calificacion.tipo_evaluacion.field.choices
     
     context = {
@@ -332,7 +338,6 @@ def ver_calificaciones_por_curso(request, curso_id):
         'opciones_tipo': opciones_tipo 
     }
     return render(request, 'calificacion/gestionar_calificaciones.html', context)
-
 
 def agregar_calificacion(request, inscripcion_id):
     """Añade una calificación a una inscripción específica."""
@@ -343,14 +348,90 @@ def agregar_calificacion(request, inscripcion_id):
         tipo_evaluacion = request.POST.get('tipo_evaluacion')
         comentarios = request.POST.get('comentarios')
         
+        # CORRECCIÓN: Usamos los valores por defecto del modelo para los nuevos campos:
+        # 'porcentaje_peso' (default=100) y 'profesor_asignador' (null=True)
         Calificacion.objects.create(
             inscripcion=inscripcion,
             puntaje=puntaje,
             tipo_evaluacion=tipo_evaluacion,
             comentarios=comentarios
         )
-        # Redirigir a la vista de gestión de calificaciones del curso
+        # NOTA: En un sistema real, se debería obtener 'porcentaje_peso' y 'profesor_asignador' del formulario.
+        
         return redirect('ver_calificaciones_por_curso', curso_id=inscripcion.curso.id)
     
-    # En caso de GET, redirigir al gestor de curso
     return redirect('ver_calificaciones_por_curso', curso_id=inscripcion.curso.id)
+
+# ==========================================
+# ASISTENCIA CRUD FUNCTIONS (CORREGIDAS)
+# ==========================================
+
+def seleccionar_curso_asistencia(request):
+    """Muestra la lista de cursos para que el usuario seleccione uno y registre la asistencia."""
+    cursos = Curso.objects.all().select_related('profesor')
+    context = {'cursos': cursos}
+    return render(request, 'asistencia/seleccionar_curso_asistencia.html', context)
+
+def gestionar_asistencia(request, curso_id):
+    """Muestra y procesa el formulario para registrar la asistencia de los estudiantes de un curso."""
+    curso = get_object_or_404(Curso, pk=curso_id)
+    hoy = date.today()
+    
+    inscripciones = Inscripcion.objects.filter(
+        curso=curso, 
+        esta_activo=True
+    ).select_related('estudiante')
+    
+    asistencias_hoy = {
+        asist.inscripcion_id: asist 
+        for asist in Asistencia.objects.filter(
+            inscripcion__in=inscripciones, 
+            fecha=hoy
+        )
+    }
+
+    if request.method == 'POST':
+        # Asumimos valores por defecto del modelo para los nuevos campos:
+        # 'justificacion_aprobada' (default=False) y 'tipo_sesion' (default='CLASE')
+        
+        for inscripcion in inscripciones:
+            presente = request.POST.get(f'presente_{inscripcion.id}') == 'on'
+            observaciones = request.POST.get(f'observaciones_{inscripcion.id}', '')
+            
+            if inscripcion.id in asistencias_hoy:
+                asistencia = asistencias_hoy[inscripcion.id]
+                asistencia.presente = presente
+                asistencia.observaciones = observaciones
+                # 'justificacion_aprobada' y 'tipo_sesion' mantienen su valor o usan el default del modelo
+                asistencia.save()
+            else:
+                # CORRECCIÓN: Al crear, 'hora_registro' se añade automáticamente (auto_now_add=True)
+                Asistencia.objects.create(
+                    inscripcion=inscripcion,
+                    fecha=hoy, 
+                    presente=presente,
+                    observaciones=observaciones
+                    # 'justificacion_aprobada' y 'tipo_sesion' usan el default del modelo
+                )
+        
+        return redirect('gestionar_asistencia', curso_id=curso_id)
+
+    context = {
+        'curso': curso,
+        'inscripciones': inscripciones,
+        'asistencias_hoy': asistencias_hoy, 
+        'fecha_hoy': hoy,
+    }
+    return render(request, 'asistencia/gestionar_asistencia.html', context)
+
+
+def ver_historial_asistencia_estudiante(request, inscripcion_id):
+    """Muestra el historial completo de asistencia para un estudiante en un curso."""
+    inscripcion = get_object_or_404(Inscripcion.objects.select_related('estudiante', 'curso'), pk=inscripcion_id)
+    historial = Asistencia.objects.filter(inscripcion=inscripcion).order_by('-fecha')
+    
+    context = {
+        'inscripcion': inscripcion,
+        'historial': historial
+    }
+    return render(request, 'asistencia/historial_asistencia_estudiante.html', context)

@@ -372,58 +372,100 @@ def seleccionar_curso_asistencia(request):
     context = {'cursos': cursos}
     return render(request, 'asistencia/seleccionar_curso_asistencia.html', context)
 
+# app_Preparatoria/views.py
+
+# app_Preparatoria/views.py
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Curso, Inscripcion, Asistencia
+from datetime import date, datetime # Importar 'datetime' para el manejo de fechas
+
+# ... (otras funciones)
+
 def gestionar_asistencia(request, curso_id):
-    """Muestra y procesa el formulario para registrar la asistencia de los estudiantes de un curso."""
+    """Muestra y procesa el formulario para registrar la asistencia de los estudiantes de un curso
+       para una fecha seleccionada o la fecha actual por defecto."""
+       
     curso = get_object_or_404(Curso, pk=curso_id)
-    hoy = date.today()
     
+    # --- Lógica de la Fecha ---
+    if request.method == 'POST':
+        # En POST, la fecha viene del formulario
+        fecha_registro_str = request.POST.get('fecha_registro')
+        try:
+            fecha_a_usar = datetime.strptime(fecha_registro_str, '%Y-%m-%d').date()
+        except ValueError:
+            # Si hay un error, usa la fecha de hoy como fallback
+            fecha_a_usar = date.today()
+    else:
+        # En GET, la fecha puede venir como parámetro GET (ej: ?fecha=2025-11-10)
+        # o se usa la fecha de hoy si no se especifica.
+        fecha_param = request.GET.get('fecha')
+        if fecha_param:
+            try:
+                fecha_a_usar = datetime.strptime(fecha_param, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_a_usar = date.today()
+        else:
+            fecha_a_usar = date.today()
+    
+    # Aseguramos que la fecha a usar no sea futura, si fuera necesario imponer ese límite.
+    if fecha_a_usar > date.today():
+         fecha_a_usar = date.today() # O maneja el error como prefieras
+    
+    
+    # --- Obtención de Datos ---
     inscripciones = Inscripcion.objects.filter(
         curso=curso, 
         esta_activo=True
     ).select_related('estudiante')
     
-    asistencias_hoy = {
-        asist.inscripcion_id: asist 
-        for asist in Asistencia.objects.filter(
-            inscripcion__in=inscripciones, 
-            fecha=hoy
-        )
-    }
+    asistencias_query = Asistencia.objects.filter(
+        inscripcion__in=inscripciones, 
+        fecha=fecha_a_usar # Usamos la fecha determinada
+    )
+    asistencias_hoy = {asist.inscripcion_id: asist for asist in asistencias_query}
+    
+    for inscripcion in inscripciones:
+        inscripcion.registro_asistencia = asistencias_hoy.get(inscripcion.id)
 
+
+    # --- Procesamiento POST (Guardar datos) ---
     if request.method == 'POST':
-        # Asumimos valores por defecto del modelo para los nuevos campos:
-        # 'justificacion_aprobada' (default=False) y 'tipo_sesion' (default='CLASE')
-        
         for inscripcion in inscripciones:
             presente = request.POST.get(f'presente_{inscripcion.id}') == 'on'
             observaciones = request.POST.get(f'observaciones_{inscripcion.id}', '')
+            justificada = request.POST.get(f'justificada_{inscripcion.id}') == 'on' 
             
-            if inscripcion.id in asistencias_hoy:
-                asistencia = asistencias_hoy[inscripcion.id]
-                asistencia.presente = presente
-                asistencia.observaciones = observaciones
-                # 'justificacion_aprobada' y 'tipo_sesion' mantienen su valor o usan el default del modelo
-                asistencia.save()
+            # Usamos la lógica de la asistencia adjunta
+            asistencia_obj = inscripcion.registro_asistencia 
+
+            if asistencia_obj:
+                # Actualizar asistencia existente
+                asistencia_obj.presente = presente
+                asistencia_obj.observaciones = observaciones
+                asistencia_obj.justificacion_aprobada = justificada
+                asistencia_obj.save()
             else:
-                # CORRECCIÓN: Al crear, 'hora_registro' se añade automáticamente (auto_now_add=True)
+                # Crear nueva asistencia
                 Asistencia.objects.create(
                     inscripcion=inscripcion,
-                    fecha=hoy, 
+                    fecha=fecha_a_usar, # Usamos la fecha determinada
                     presente=presente,
-                    observaciones=observaciones
-                    # 'justificacion_aprobada' y 'tipo_sesion' usan el default del modelo
+                    observaciones=observaciones,
+                    justificacion_aprobada=justificada
                 )
         
-        return redirect('gestionar_asistencia', curso_id=curso_id)
+        # Redirigir de vuelta al mismo curso y a la fecha recién guardada
+        return redirect(f"{reverse('gestionar_asistencia', args=[curso_id])}?fecha={fecha_a_usar}")
+
 
     context = {
         'curso': curso,
         'inscripciones': inscripciones,
-        'asistencias_hoy': asistencias_hoy, 
-        'fecha_hoy': hoy,
+        'fecha_hoy': fecha_a_usar, # La variable 'fecha_hoy' ahora es la fecha seleccionada
     }
     return render(request, 'asistencia/gestionar_asistencia.html', context)
-
 
 def ver_historial_asistencia_estudiante(request, inscripcion_id):
     """Muestra el historial completo de asistencia para un estudiante en un curso."""

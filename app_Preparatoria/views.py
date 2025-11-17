@@ -1,9 +1,37 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Profesor, Curso, Estudiante, Inscripcion, Calificacion, Asistencia
 from django.urls import reverse
-from datetime import date
+from datetime import date, datetime # Importar datetime para el manejo de fechas
+from django.db.models import Sum, Count, F, Case, When, FloatField # Importar elementos de agregación
 
-# 14. Funciones solicitadas para el CRUD de Profesor
+# --------------------------------------------------------------------------
+# 1. FUNCIÓN AUXILIAR: GENERACIÓN DINÁMICA DE PERIODOS (CORREGIDA)
+# --------------------------------------------------------------------------
+
+def get_periodos_disponibles(duracion_ciclo=4):
+    """
+    Genera una lista de periodos académicos en formato de RANGO DE AÑOS (YYYY-YYYY).
+    'duracion_ciclo' define cuántos años dura el ciclo escolar (ej: 3 o 4 años).
+    """
+    current_year = date.today().year
+    periods = []
+    
+    # Generamos 5 rangos posibles empezando desde el año actual
+    # Esto asegura que siempre haya opciones futuras disponibles en el select.
+    for start_year in range(current_year, current_year + 5):
+        end_year = start_year + duracion_ciclo
+        periods.append(f'{start_year}-{end_year}')
+             
+    return periods
+
+# --------------------------------------------------------------------------
+# 2. VISTAS GENERALES Y PROFESOR (CRUD)
+# --------------------------------------------------------------------------
+
+def inicio_sistema(request):
+# ... (vistas de profesor sin cambios)
+# ...
+    return render(request, 'inicio.html')
 
 def inicio_profesor(request):
     """Muestra la lista de todos los profesores."""
@@ -14,15 +42,12 @@ def inicio_profesor(request):
 def agregar_profesor(request):
     """Gestiona la adición de un nuevo profesor."""
     if request.method == 'POST':
-        # No hay validación de datos (Punto 30)
         nombre = request.POST.get('nombre_profesor')
         apellido = request.POST.get('apellido_profesor')
         correo = request.POST.get('correo_profesor')
         telefono = request.POST.get('telefono')
         especialidad = request.POST.get('especialidad')
-        # La fecha de contratación se añade automáticamente
         
-        # Crear y guardar el objeto Profesor
         Profesor.objects.create(
             nombre_profesor=nombre,
             apellido_profesor=apellido,
@@ -30,8 +55,7 @@ def agregar_profesor(request):
             telefono=telefono,
             especialidad=especialidad
         )
-        return redirect('ver_profesor') # Redirige a la lista después de guardar
-
+        return redirect('ver_profesor') 
     return render(request, 'profesor/agregar_profesor.html')
 
 def actualizar_profesor(request, profesor_id):
@@ -44,21 +68,16 @@ def realizar_actualizacion_profesor(request, profesor_id):
     """Procesa el formulario de actualización de un profesor."""
     profesor = get_object_or_404(Profesor, pk=profesor_id)
     if request.method == 'POST':
-        # No hay validación de datos (Punto 30)
         profesor.nombre_profesor = request.POST.get('nombre_profesor')
         profesor.apellido_profesor = request.POST.get('apellido_profesor')
         profesor.correo_profesor = request.POST.get('correo_profesor')
         profesor.telefono = request.POST.get('telefono')
         profesor.especialidad = request.POST.get('especialidad')
-        # El campo 'activo' se maneja con un checkbox
         profesor.activo = request.POST.get('activo') == 'on'
         
         profesor.save()
         return redirect('ver_profesor')
-
-    # Si por alguna razón no es POST, redirige al formulario de actualización
     return redirect('actualizar_profesor', profesor_id=profesor_id)
-
 
 def borrar_profesor(request, profesor_id):
     """Gestiona la eliminación de un profesor."""
@@ -66,38 +85,32 @@ def borrar_profesor(request, profesor_id):
     if request.method == 'POST':
         profesor.delete()
         return redirect('ver_profesor')
-        
-    # El archivo borrar_profesor.html debe ser una página de confirmación
     context = {'profesor': profesor}
     return render(request, 'profesor/borrar_profesor.html', context)
-
-def inicio_sistema(request):
-    """Vista para la página de inicio general del sistema."""
-    return render(request, 'inicio.html')
-
-# ... (otras funciones existentes)
 
 def ver_detalle_profesor(request, profesor_id):
     """Muestra los detalles de un profesor específico."""
     profesor = get_object_or_404(Profesor, pk=profesor_id)
     context = {'profesor': profesor}
-    # Renderizar un nuevo HTML para el detalle
     return render(request, 'profesor/detalle_profesor.html', context)
 
+# --------------------------------------------------------------------------
+# 3. VISTAS CURSO (CRUD)
+# --------------------------------------------------------------------------
+
 def inicio_curso(request):
+# ... (vistas de curso sin cambios)
+# ...
     """Muestra la lista de todos los cursos, incluyendo el profesor asociado."""
-    # Usamos select_related para optimizar la consulta y obtener el nombre del profesor
     cursos = Curso.objects.all().select_related('profesor')
     context = {'cursos': cursos}
     return render(request, 'curso/ver_curso.html', context)
 
 def agregar_curso(request):
     """Gestiona la adición de un nuevo curso con selección de profesor."""
-    # Solo mostrar profesores activos para la selección
     profesores = Profesor.objects.filter(activo=True) 
     
     if request.method == 'POST':
-        # Extracción de datos (sin validación)
         nombre = request.POST.get('nombre_curso')
         codigo = request.POST.get('codigo')
         descripcion = request.POST.get('descripcion')
@@ -106,7 +119,6 @@ def agregar_curso(request):
         aula = request.POST.get('aula')
         profesor_id = request.POST.get('profesor')
         
-        # Obtener la instancia del Profesor
         profesor_obj = get_object_or_404(Profesor, pk=profesor_id)
         
         Curso.objects.create(
@@ -116,7 +128,7 @@ def agregar_curso(request):
             creditos=creditos,
             horario=horario,
             aula=aula,
-            profesor=profesor_obj # Asignar el objeto profesor
+            profesor=profesor_obj
         )
         return redirect('ver_curso') 
 
@@ -134,7 +146,6 @@ def realizar_actualizacion_curso(request, curso_id):
     """Procesa el formulario de actualización de un curso."""
     curso = get_object_or_404(Curso, pk=curso_id)
     if request.method == 'POST':
-        # Actualización de campos
         curso.nombre_curso = request.POST.get('nombre_curso')
         curso.codigo = request.POST.get('codigo')
         curso.descripcion = request.POST.get('descripcion')
@@ -156,20 +167,22 @@ def borrar_curso(request, curso_id):
     if request.method == 'POST':
         curso.delete()
         return redirect('ver_curso')
-        
-    # Página de confirmación
     context = {'curso': curso}
     return render(request, 'curso/borrar_curso.html', context)
 
 def ver_detalle_curso(request, curso_id):
     """Muestra los detalles completos de un curso específico."""
-    # Usamos select_related para obtener el profesor asociado
     curso = get_object_or_404(Curso.objects.select_related('profesor'), pk=curso_id)
     context = {'curso': curso}
     return render(request, 'curso/ver_detalle_curso.html', context)
 
+# --------------------------------------------------------------------------
+# 4. VISTAS ESTUDIANTE (CRUD)
+# --------------------------------------------------------------------------
 
 def inicio_estudiante(request):
+# ... (vistas de estudiante sin cambios)
+# ...
     """Muestra la lista de todos los estudiantes."""
     estudiantes = Estudiante.objects.all()
     context = {'estudiantes': estudiantes}
@@ -191,18 +204,15 @@ def agregar_estudiante(request):
         matricula = request.POST.get('matricula')
         correo = request.POST.get('correo_estudiante')
         fecha_nacimiento = request.POST.get('fecha_nacimiento')
-        cursos_seleccionados = request.POST.getlist('cursos') # Obtiene una lista de IDs
+        cursos_seleccionados = request.POST.getlist('cursos')
 
-        # Crear y guardar el objeto Estudiante
         nuevo_estudiante = Estudiante.objects.create(
             nombre_estudiante=nombre,
             apellido_estudiante=apellido,
             matricula=matricula,
             correo_estudiante=correo,
-            # Aseguramos que la fecha esté en formato YYYY-MM-DD
             fecha_nacimiento=fecha_nacimiento 
         )
-        # Asignar los cursos ManyToMany
         nuevo_estudiante.cursos.set(cursos_seleccionados) 
         
         return redirect('ver_estudiante')
@@ -215,7 +225,6 @@ def actualizar_estudiante(request, estudiante_id):
     estudiante = get_object_or_404(Estudiante.objects.prefetch_related('cursos'), pk=estudiante_id)
     cursos = Curso.objects.all()
     
-    # Obtener los IDs de los cursos actualmente asignados
     cursos_actuales_ids = list(estudiante.cursos.values_list('id', flat=True))
     
     context = {
@@ -237,7 +246,6 @@ def realizar_actualizacion_estudiante(request, estudiante_id):
         cursos_seleccionados = request.POST.getlist('cursos')
         
         estudiante.save()
-        # Actualizar la relación ManyToMany
         estudiante.cursos.set(cursos_seleccionados)
         
         return redirect('ver_estudiante')
@@ -250,15 +258,12 @@ def borrar_estudiante(request, estudiante_id):
     if request.method == 'POST':
         estudiante.delete()
         return redirect('ver_estudiante')
-        
     context = {'estudiante': estudiante}
     return render(request, 'estudiante/borrar_estudiante.html', context)
 
-# app_Preparatoria/views.py (Fragmento - Añadir a las funciones existentes)
-
-# ==========================================
-# INSCRIPCION MANAGEMENT FUNCTIONS (CORREGIDAS)
-# ==========================================
+# --------------------------------------------------------------------------
+# 5. VISTAS INSCRIPCIÓN (CRUD)
+# --------------------------------------------------------------------------
 
 def ver_inscripciones(request):
     """Muestra la lista de todas las inscripciones activas."""
@@ -267,39 +272,85 @@ def ver_inscripciones(request):
     return render(request, 'inscripcion/ver_inscripciones.html', context)
 
 def agregar_inscripcion(request):
-    """Permite inscribir un estudiante en uno o varios cursos."""
+    """Permite inscribir un estudiante en uno o varios cursos, usando periodos dinámicos."""
     estudiantes = Estudiante.objects.all()
     cursos = Curso.objects.all()
+    # 🎯 Ajuste la llamada para usar 4 años de ciclo (ej: 2025-2029)
+    periodos_disponibles = get_periodos_disponibles(duracion_ciclo=4) 
     
     if request.method == 'POST':
         estudiante_id = request.POST.get('estudiante_id')
         cursos_seleccionados = request.POST.getlist('cursos')
+        periodo_seleccionado = request.POST.get('periodo_academico') 
         
         estudiante = get_object_or_404(Estudiante, pk=estudiante_id)
-        
-        # Asumimos el periodo por defecto del modelo si no se pasa por POST
-        periodo_default = '2025-2'
+        # ⚠️ Nota: Ya no se usa f'{date.today().year}-2' como fallback.
+        periodo_a_usar = periodo_seleccionado 
         
         for curso_id in cursos_seleccionados:
             curso = get_object_or_404(Curso, pk=curso_id)
             
-            # CORRECCIÓN: Usar get_or_create con el periodo para respetar la nueva clave única
             Inscripcion.objects.get_or_create(
                 estudiante=estudiante,
                 curso=curso,
-                periodo_academico=periodo_default, # Usar el campo clave
+                periodo_academico=periodo_a_usar,
                 defaults={
-                    # Asignamos el campo booleano, si se llegara a crear
                     'es_obligatorio': True 
                 }
             )
-        
         return redirect('ver_inscripciones')
 
-    context = {'estudiantes': estudiantes, 'cursos': cursos}
+    context = {
+        'estudiantes': estudiantes, 
+        'cursos': cursos,
+        'periodos_disponibles': periodos_disponibles
+    }
     return render(request, 'inscripcion/agregar_inscripcion.html', context)
 
+def actualizar_inscripcion(request, inscripcion_id):
+    """Muestra el formulario para editar una inscripción."""
+    inscripcion = get_object_or_404(Inscripcion.objects.select_related('estudiante', 'curso'), pk=inscripcion_id)
+    # 🎯 Ajuste la llamada para usar 4 años de ciclo (ej: 2025-2029)
+    periodos_disponibles = get_periodos_disponibles(duracion_ciclo=4) 
+    
+    context = {
+        'inscripcion': inscripcion,
+        'periodos_disponibles': periodos_disponibles,
+    }
+    return render(request, 'inscripcion/actualizar_inscripcion.html', context)
+
+def realizar_actualizacion_inscripcion(request, inscripcion_id):
+    """Procesa el formulario de actualización de una inscripción."""
+    inscripcion = get_object_or_404(Inscripcion, pk=inscripcion_id)
+    
+    if request.method == 'POST':
+        inscripcion.periodo_academico = request.POST.get('periodo_academico')
+        inscripcion.es_obligatorio = request.POST.get('es_obligatorio') == 'on'
+        
+        esta_activo_str = request.POST.get('esta_activo')
+        inscripcion.esta_activo = esta_activo_str == 'on'
+        
+        if not inscripcion.esta_activo and not inscripcion.fecha_finalizacion:
+             inscripcion.fecha_finalizacion = date.today()
+        elif inscripcion.esta_activo:
+             inscripcion.fecha_finalizacion = None
+
+        fecha_finalizacion_str = request.POST.get('fecha_finalizacion')
+        if fecha_finalizacion_str:
+            try:
+                # Usamos datetime.strptime para manejar la conversión de string a date
+                inscripcion.fecha_finalizacion = datetime.strptime(fecha_finalizacion_str, '%Y-%m-%d').date()
+            except ValueError:
+                inscripcion.fecha_finalizacion = None
+
+        inscripcion.save()
+        return redirect('ver_inscripciones')
+
+    return redirect('actualizar_inscripcion', inscripcion_id=inscripcion_id)
+
 def finalizar_inscripcion(request, inscripcion_id):
+# ... (vistas de inscripción sin cambios)
+# ...
     """Marca una inscripción como inactiva (finalizada)."""
     inscripcion = get_object_or_404(Inscripcion, pk=inscripcion_id)
     
@@ -312,9 +363,12 @@ def finalizar_inscripcion(request, inscripcion_id):
     context = {'inscripcion': inscripcion}
     return render(request, 'inscripcion/finalizar_inscripcion.html', context)
 
-# ==========================================
-# CALIFICACION MANAGEMENT FUNCTIONS (CORREGIDAS)
-# ==========================================
+# --------------------------------------------------------------------------
+# 6. VISTAS CALIFICACIÓN (MODIFICADAS PARA CALCULAR PROMEDIO EN LA VISTA)
+# --------------------------------------------------------------------------
+
+# ... (vistas de calificación sin cambios)
+# ...
 
 def ver_calificaciones_curso(request):
     """Muestra un resumen de cursos para seleccionar y ver calificaciones."""
@@ -323,21 +377,37 @@ def ver_calificaciones_curso(request):
     return render(request, 'calificacion/ver_cursos_calificar.html', context)
 
 def ver_calificaciones_por_curso(request, curso_id):
-    """Muestra las inscripciones activas de un curso para asignar/ver calificaciones."""
+    """Muestra las inscripciones activas de un curso, calcula y muestra el promedio."""
     curso = get_object_or_404(Curso, pk=curso_id)
+    
+    # Obtener inscripciones, prefetch calificaciones y realizar cálculos de promedio
     inscripciones = Inscripcion.objects.filter(
         curso=curso, 
         esta_activo=True
-    ).select_related('estudiante').prefetch_related('calificaciones')
+    ).select_related('estudiante').prefetch_related('calificaciones').annotate(
+        # 1. Suma de todos los puntajes
+        total_puntaje=Sum('calificaciones__puntaje'),
+        # 2. Conteo de calificaciones
+        conteo_calificaciones=Count('calificaciones'),
+        # 3. Calcular el promedio, evitando división por cero con Case/When
+        promedio_simple=Case(
+            When(conteo_calificaciones__gt=0, 
+                 then=F('total_puntaje') / F('conteo_calificaciones')),
+            default=0.0,
+            output_field=FloatField()
+        )
+    )
     
     opciones_tipo = Calificacion.tipo_evaluacion.field.choices
     
     context = {
         'curso': curso,
-        'inscripciones': inscripciones,
+        # Las inscripciones ahora incluyen 'total_puntaje', 'conteo_calificaciones' y 'promedio_simple'
+        'inscripciones': inscripciones, 
         'opciones_tipo': opciones_tipo 
     }
     return render(request, 'calificacion/gestionar_calificaciones.html', context)
+
 
 def agregar_calificacion(request, inscripcion_id):
     """Añade una calificación a una inscripción específica."""
@@ -348,23 +418,23 @@ def agregar_calificacion(request, inscripcion_id):
         tipo_evaluacion = request.POST.get('tipo_evaluacion')
         comentarios = request.POST.get('comentarios')
         
-        # CORRECCIÓN: Usamos los valores por defecto del modelo para los nuevos campos:
-        # 'porcentaje_peso' (default=100) y 'profesor_asignador' (null=True)
         Calificacion.objects.create(
             inscripcion=inscripcion,
             puntaje=puntaje,
             tipo_evaluacion=tipo_evaluacion,
             comentarios=comentarios
         )
-        # NOTA: En un sistema real, se debería obtener 'porcentaje_peso' y 'profesor_asignador' del formulario.
-        
+        # Redirige de vuelta al curso
         return redirect('ver_calificaciones_por_curso', curso_id=inscripcion.curso.id)
     
     return redirect('ver_calificaciones_por_curso', curso_id=inscripcion.curso.id)
 
-# ==========================================
-# ASISTENCIA CRUD FUNCTIONS (CORREGIDAS)
-# ==========================================
+# --------------------------------------------------------------------------
+# 7. VISTAS ASISTENCIA
+# --------------------------------------------------------------------------
+
+# ... (vistas de asistencia sin cambios)
+# ...
 
 def seleccionar_curso_asistencia(request):
     """Muestra la lista de cursos para que el usuario seleccione uno y registre la asistencia."""
@@ -372,46 +442,33 @@ def seleccionar_curso_asistencia(request):
     context = {'cursos': cursos}
     return render(request, 'asistencia/seleccionar_curso_asistencia.html', context)
 
-# app_Preparatoria/views.py
-
-# app_Preparatoria/views.py
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Curso, Inscripcion, Asistencia
-from datetime import date, datetime # Importar 'datetime' para el manejo de fechas
-
-# ... (otras funciones)
 
 def gestionar_asistencia(request, curso_id):
     """Muestra y procesa el formulario para registrar la asistencia de los estudiantes de un curso
-       para una fecha seleccionada o la fecha actual por defecto."""
-       
+         para una fecha seleccionada o la fecha actual por defecto."""
+        
     curso = get_object_or_404(Curso, pk=curso_id)
     
     # --- Lógica de la Fecha ---
+    fecha_a_usar = date.today()
+
     if request.method == 'POST':
-        # En POST, la fecha viene del formulario
         fecha_registro_str = request.POST.get('fecha_registro')
-        try:
-            fecha_a_usar = datetime.strptime(fecha_registro_str, '%Y-%m-%d').date()
-        except ValueError:
-            # Si hay un error, usa la fecha de hoy como fallback
-            fecha_a_usar = date.today()
+        if fecha_registro_str:
+            try:
+                fecha_a_usar = datetime.strptime(fecha_registro_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
     else:
-        # En GET, la fecha puede venir como parámetro GET (ej: ?fecha=2025-11-10)
-        # o se usa la fecha de hoy si no se especifica.
         fecha_param = request.GET.get('fecha')
         if fecha_param:
             try:
                 fecha_a_usar = datetime.strptime(fecha_param, '%Y-%m-%d').date()
             except ValueError:
-                fecha_a_usar = date.today()
-        else:
-            fecha_a_usar = date.today()
-    
-    # Aseguramos que la fecha a usar no sea futura, si fuera necesario imponer ese límite.
+                pass
+
     if fecha_a_usar > date.today():
-         fecha_a_usar = date.today() # O maneja el error como prefieras
+          fecha_a_usar = date.today() 
     
     
     # --- Obtención de Datos ---
@@ -422,7 +479,7 @@ def gestionar_asistencia(request, curso_id):
     
     asistencias_query = Asistencia.objects.filter(
         inscripcion__in=inscripciones, 
-        fecha=fecha_a_usar # Usamos la fecha determinada
+        fecha=fecha_a_usar
     )
     asistencias_hoy = {asist.inscripcion_id: asist for asist in asistencias_query}
     
@@ -437,7 +494,6 @@ def gestionar_asistencia(request, curso_id):
             observaciones = request.POST.get(f'observaciones_{inscripcion.id}', '')
             justificada = request.POST.get(f'justificada_{inscripcion.id}') == 'on' 
             
-            # Usamos la lógica de la asistencia adjunta
             asistencia_obj = inscripcion.registro_asistencia 
 
             if asistencia_obj:
@@ -450,20 +506,19 @@ def gestionar_asistencia(request, curso_id):
                 # Crear nueva asistencia
                 Asistencia.objects.create(
                     inscripcion=inscripcion,
-                    fecha=fecha_a_usar, # Usamos la fecha determinada
+                    fecha=fecha_a_usar,
                     presente=presente,
                     observaciones=observaciones,
                     justificacion_aprobada=justificada
                 )
         
-        # Redirigir de vuelta al mismo curso y a la fecha recién guardada
         return redirect(f"{reverse('gestionar_asistencia', args=[curso_id])}?fecha={fecha_a_usar}")
 
 
     context = {
         'curso': curso,
         'inscripciones': inscripciones,
-        'fecha_hoy': fecha_a_usar, # La variable 'fecha_hoy' ahora es la fecha seleccionada
+        'fecha_hoy': fecha_a_usar,
     }
     return render(request, 'asistencia/gestionar_asistencia.html', context)
 

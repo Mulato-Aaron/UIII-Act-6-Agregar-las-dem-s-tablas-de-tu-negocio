@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
-{% load custom_filters %} {# Necesario para los filtros 'add' y 'div' usados en el promedio #}
+
+{# ❌ ELIMINADA LA LÍNEA: {% load custom_filters %} ya que el promedio se calcula en views.py #}
 
 {% block content %}
-<h2 class="mb-4 text-primary"><i class="bi bi-list-stars"></i> Calificaciones para: {{ curso.nombre_curso }} ({{ curso.codigo }})</h2>
+<h2 class="mb-4 text-primary"><i class="bi bi-list-stars"></i> Calificaciones para: **{{ curso.nombre_curso }}** ({{ curso.codigo }})</h2>
 <p class="text-muted"><strong>Profesor:</strong> {{ curso.profesor.nombre_profesor }} {{ curso.profesor.apellido_profesor }}</p>
 
 <hr>
@@ -14,37 +15,44 @@
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }} <small class="text-muted">({{ inscripcion.estudiante.matricula }})</small></h5>
                 
-                {# CÁLCULO DEL PROMEDIO (requiere custom_filters.py) #}
-                {% with calificaciones=inscripcion.calificaciones.all %}
-                    {% with total_puntaje=0 %}
-                        {% for calificacion in calificaciones %}
-                            {# Suma el puntaje de todas las calificaciones #}
-                            {% with total_puntaje=total_puntaje|add:calificacion.puntaje %}
-                            {% endwith %}
-                        {% endfor %}
-                        
-                        {# Si hay calificaciones, calcula el promedio simple (Suma de Notas / Cantidad de Notas) #}
-                        {% if calificaciones|length > 0 %}
-                            {% with promedio_simple=total_puntaje|div:calificaciones|length %}
-                                <span class="badge bg-primary fs-6" title="Promedio simple registrado">
-                                    Promedio: {{ promedio_simple|floatformat:2 }}
-                                </span>
-                            {% endwith %}
-                        {% endif %}
-                    {% endwith %}
-                {% endwith %}
+                {# 🌟 CÁLCULO DE PROMEDIO MODIFICADO 🌟 #}
+                {# Usa los campos 'promedio_simple' y 'conteo_calificaciones' calculados en la vista #}
+                {% if inscripcion.promedio_simple and inscripcion.conteo_calificaciones > 0 %}
+                    <span class="badge bg-primary fs-6" title="Promedio simple registrado">
+                        Promedio: {{ inscripcion.promedio_simple|floatformat:2 }}
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">
+                        Sin Promedio
+                    </span>
+                {% endif %}
+                {# 🌟 FIN DE CÁLCULO DE PROMEDIO MODIFICADO 🌟 #}
+                
             </div>
             
             <div class="card-body">
                 
                 <h6><i class="bi bi-journal-check me-1"></i> Evaluaciones Registradas:</h6>
-                {% if inscripcion.calificaciones.all %}
+                
+                {# 👇 CORRECCIÓN CLAVE: Accede correctamente a la relación inversa de Calificaciones #}
+                {% comment %} 
+                    Si 'calificaciones' es el related_name del ForeignKey de Calificacion a Inscripcion, 
+                    esto funciona gracias al prefetch_related en views.py.
+                {% endcomment %}
+                {% with calificaciones=inscripcion.calificaciones.all %}
+                
+                {% if calificaciones %}
                 <ul class="list-group list-group-flush mb-3 border-bottom pb-3">
-                    {% for calificacion in inscripcion.calificaciones.all %}
+                    {% for calificacion in calificaciones %}
                         <li class="list-group-item d-flex justify-content-between align-items-center py-1 px-0">
                             <div>
                                 **{{ calificacion.get_tipo_evaluacion_display }}** ({{ calificacion.fecha_evaluacion|date:"d/m/Y" }})
-                                <small class="text-secondary ms-2">Peso: {{ calificacion.porcentaje_peso }}%</small>
+                                
+                                {# Estos campos (porcentaje_peso, profesor_asignador) deben existir en el modelo Calificacion #}
+                                {% if calificacion.porcentaje_peso %}
+                                    <small class="text-secondary ms-2">Peso: {{ calificacion.porcentaje_peso }}%</small>
+                                {% endif %}
+                                
                                 {% if calificacion.profesor_asignador %}
                                     <small class="text-info ms-2" title="Profesor Asignador">
                                         / {{ calificacion.profesor_asignador.nombre_profesor|slice:":1" }}. {{ calificacion.profesor_asignador.apellido_profesor }}
@@ -60,6 +68,9 @@
                     No hay calificaciones registradas aún.
                 </div>
                 {% endif %}
+                
+                {% endwith %}
+                {# 👆 FIN DE CORRECCIÓN #}
 
                 <form method="POST" action="{% url 'agregar_calificacion' inscripcion.id %}" class="mt-3 border p-3 rounded bg-light">
                     {% csrf_token %}

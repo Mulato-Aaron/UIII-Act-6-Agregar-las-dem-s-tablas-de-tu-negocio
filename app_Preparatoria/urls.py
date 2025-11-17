@@ -37,11 +37,13 @@ urlpatterns = [
     path('inscripcion/', views.ver_inscripciones, name='ver_inscripciones'),
     path('inscripcion/agregar/', views.agregar_inscripcion, name='agregar_inscripcion'),
     path('inscripcion/finalizar/<int:inscripcion_id>/', views.finalizar_inscripcion, name='finalizar_inscripcion'),
+    path('inscripcion/actualizar/<int:inscripcion_id>/', views.actualizar_inscripcion, name='actualizar_inscripcion'),
     
     # Rutas para el modelo CALIFICACION (NUEVAS)
-    path('calificacion/', views.ver_calificaciones_curso, name='seleccionar_curso_calificar'),
+    path('calificacion/', views.ver_calificaciones_curso, name='ver_calificaciones_curso'),
     path('calificacion/gestionar/<int:curso_id>/', views.ver_calificaciones_por_curso, name='ver_calificaciones_por_curso'),
     path('calificacion/agregar/<int:inscripcion_id>/', views.agregar_calificacion, name='agregar_calificacion'),
+    path('inscripcion/actualizar_guardar/<int:inscripcion_id>/', views.realizar_actualizacion_inscripcion, name='realizar_actualizacion_inscripcion'),
 
     # Rutas para el modelo ASISTENCIA (NUEVAS)
     path('asistencia/', views.seleccionar_curso_asistencia, name='seleccionar_curso_asistencia'),

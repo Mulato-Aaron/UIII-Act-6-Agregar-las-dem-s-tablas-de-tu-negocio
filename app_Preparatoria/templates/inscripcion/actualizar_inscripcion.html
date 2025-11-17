@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4 text-warning"><i class="bi bi-pencil-square"></i> Actualizar Inscripción</h2>
+<h4 class="mb-3 text-muted">Estudiante: **{{ inscripcion.estudiante.nombre_estudiante }} {{ inscripcion.estudiante.apellido_estudiante }}**</h4>
+<h5 class="mb-4 text-info">Curso: **{{ inscripcion.curso.nombre_curso }}** ({{ inscripcion.curso.codigo }})</h5>
+
+<form method="POST" action="{% url 'realizar_actualizacion_inscripcion' inscripcion.id %}" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="row g-3">
+        {# El estudiante y curso no se deberían cambiar una vez creados #}
+        
+        {# 1. PERÍODO ACADÉMICO (CORREGIDO CON VALORES DINÁMICOS) #}
+        <div class="col-md-6">
+            <label for="periodo_academico" class="form-label fw-bold">Periodo Académico</label>
+            <select id="periodo_academico" name="periodo_academico" class="form-select" required>
+                {% for periodo in periodos_disponibles %}
+                    <option value="{{ periodo }}" {% if periodo == inscripcion.periodo_academico %}selected{% endif %}>
+                        {{ periodo }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">
+                Por favor, selecciona un periodo académico.
+            </div>
+        </div>
+
+        {# 2. ES OBLIGATORIO #}
+        <div class="col-md-6 d-flex align-items-center mt-5">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="es_obligatorio" name="es_obligatorio" 
+                       {% if inscripcion.es_obligatorio %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="es_obligatorio">Curso Obligatorio</label>
+            </div>
+        </div>
+
+        {# 3. ESTADO ACTIVO #}
+        <div class="col-md-6 d-flex align-items-center mt-5">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="esta_activo" name="esta_activo" 
+                       {% if inscripcion.esta_activo %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="esta_activo">Inscripción Activa</label>
+                <small class="text-muted d-block">(Desmarcar si el estudiante ya finalizó)</small>
+            </div>
+        </div>
+
+        {# 4. FECHA DE FINALIZACIÓN #}
+        <div class="col-md-6">
+            <label for="fecha_finalizacion" class="form-label fw-bold">Fecha de Finalización (Opcional)</label>
+            <input type="date" id="fecha_finalizacion" name="fecha_finalizacion" class="form-control" 
+                   value="{% if inscripcion.fecha_finalizacion %}{{ inscripcion.fecha_finalizacion|date:'Y-m-d' }}{% endif %}">
+            <small class="text-muted">Se llena automáticamente al desactivar la casilla Activa.</small>
+        </div>
+        
+    </div>
+
+    <hr class="my-4">
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'ver_inscripciones' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle-fill"></i> Cancelar
+        </a>
+        <button class="btn btn-warning text-dark" type="submit">
+            <i class="bi bi-save-fill"></i> Guardar Cambios
+        </button>
+    </div>
+</form>
+
+{% endblock %}
